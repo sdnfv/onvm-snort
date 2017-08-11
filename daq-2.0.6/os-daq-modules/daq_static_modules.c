@@ -26,6 +26,12 @@ const DAQ_Module_t *static_modules[] =
 #ifdef BUILD_AFPACKET_MODULE
     &afpacket_daq_module_data,
 #endif
+#ifdef BUILD_DPDK_MODULE
+    &dpdk_daq_module_data,
+#endif
+#ifdef BUILD_NETVM_MODULE
+    &netvm_daq_module_data,
+#endif
 #ifdef BUILD_DUMP_MODULE
     &dump_daq_module_data,
 #endif
