@@ -1,0 +1,7 @@
+2016-04-25 - Snort 2.9.8.3
+[*] Improvements
+ *  Stability improvement for Stream6 preprocessor
+
+ *  Fixed multiple issues in HttpInspect preprocessor
+
+ *  Fixed an issue of incorrect masking of sensitive data
