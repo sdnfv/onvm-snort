@@ -2,7 +2,7 @@
 
 About
 --
-Snort is a free and open source network intrusion detection system owned by Cisco. Snort runs in conjuction with the openNetVM platform to provide enhanced security for packet processing.
+[Snort][snort-link] is a free and open source network intrusion detection system owned by Cisco. Snort runs in conjuction with the openNetVM platform to provide enhanced security for packet processing.
 
 openNetVM is a high performance NFV platform based on [Intel DPDK][dpdk] and [Docker][docker] containers.  openNetVM is SDN-enabled, allowing the network controller to provide rules that dictate what network functions need to process each packet flow.
 
@@ -12,7 +12,7 @@ Installing
 --
 To install Snort and configure it for openNetVM, please see the [snort Installation][install] guide for a thorough walkthrough.
 
-
+[snort-link]: https://www.snort.org/
 [onvm]: http://sdnfv.github.io/onvm/
 [license]: LICENSE
 [dpdk]: http://dpdk.org
