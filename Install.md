@@ -2,6 +2,7 @@
 
 This guide helps you build and install Snort.
 
+---
 1. Compile DPDK
 ---
 
@@ -43,7 +44,7 @@ This guide helps you build and install Snort.
 
 1. Install dependencies.
     ```sh
-    sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev”
+    sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev
     ```
 
 2. Navigate to the DAQ source directory.
