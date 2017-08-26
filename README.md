@@ -18,9 +18,9 @@ To install Snort and configure it for openNetVM, please see the [snort Installat
 
 Contributors
 --
-Jean Tourrilhes -- Hewlett Packard Labs
-Grace Liu -- GWU (Contact: guyue at gwu.edu)
-Riley Kennedy -- GWU
+- Jean Tourrilhes -- Hewlett Packard Labs
+- Grace Liu -- GWU (Contact: guyue at gwu.edu)
+- Riley Kennedy -- GWU
 
 [snort-link]: https://www.snort.org/
 [onvm]: http://sdnfv.github.io/onvm/
