@@ -136,5 +136,5 @@ This guide helps you build and install Snort.
     ```
 
 [onvm-install]: https://github.com/sdnfv/openNetVM/blob/master/docs/Install.md
-[onvm-daq]: https://github.com/rskennedy/onvm-snort/blob/ccefde89d13a4814a423699cb28a3dc041e1d98e/onvm-daq.png "onvm daq"
-[snort-init]: https://github.com/rskennedy/onvm-snort/blob/ccefde89d13a4814a423699cb28a3dc041e1d98e/snort-initialization.png "snort initialization"
+[onvm-daq]: https://github.com/sdnfv/onvm-snort/blob/master/onvm-daq.png "onvm daq"
+[snort-init]: https://github.com/sdnfv/onvm-snort/blob/master/snort-initialization.png "snort initialization"
