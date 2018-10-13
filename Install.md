@@ -67,7 +67,7 @@ This guide helps you build and install Snort.
   
 4. Run the configuration script and include the dpdk and netvm libraries.
     ```sh
-    ./configure --with-dpdk-includes=$RTE_SDK/$RTE_TARGET/include --with-dpdk-libraries=$RTE_SDK/$RTE_TARGET/lib --with-netvm-includes=openNetVM-dev/onvm --with-netvm-libraries=openNetVM-dev/onvm
+    ./configure --with-dpdk-includes=$RTE_SDK/$RTE_TARGET/include --with-dpdk-libraries=$RTE_SDK/$RTE_TARGET/lib --with-netvm-includes=$ONVM_HOME/onvm --with-netvm-libraries=$ONVM_HOME/onvm
     ```
     User should see yes for both DPDK and NetVM DAQs
     ![onvm daq][onvm-daq]
@@ -100,6 +100,7 @@ This guide helps you build and install Snort.
 4. Make snort.
     ```sh
     make clean
+    cp Makefile.dpdk Makefile
     make -j7
     sudo make install
     ```
@@ -114,7 +115,7 @@ This guide helps you build and install Snort.
 
 1. Copy snort files into `/etc/snort` and create dynamic rules folder.
     ```sh
-    sudo cp -r snort-etc /etc/snort
+    sudo cp -r snort-2.9.8.3/simple-etc /etc/snort
     sudo mkdir /usr/local/lib/snort_dynamicrules
     ```
     
