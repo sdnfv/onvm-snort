@@ -196,7 +196,6 @@ static int netvm_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, cha
     /* At this point, we are *not* running. */
     //nf_info->status = NF_STOPPED;
     printf("netvm init done\n");
-
     /* Complete onvm handshake */
     onvm_nflib_nf_ready(nf_info);
 
@@ -214,7 +213,6 @@ static int netvm_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, cha
         rval = DAQ_ERROR_NOMEM;
         goto shutdown;
     }
-
     netvmc->info = nf_info;
     netvmc->snaplen = config->snaplen;
     netvmc->timeout = (config->timeout > 0) ? (int) config->timeout : -1;
