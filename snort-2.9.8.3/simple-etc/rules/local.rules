@@ -1,0 +1,4 @@
+alert icmp any any -> $HOME_NET any (msg:"ICMP test detected"; sid:1000001)
+drop tcp any any -> any 23 (msg: "Drop telnet packets"; sid: 1000002)
+drop icmp any any -> 10.10.142.34 any (msg: "Drop bourgogne packets"; sid: 1000003)
+pass ip any any -> any any
