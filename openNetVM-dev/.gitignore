@@ -1,0 +1,51 @@
+# build directories
+**/build/**
+**/x86_64-native-linuxapp-gcc/**
+
+# dpdk built target
+dpdk-1.8.0/x86_64-native-linuxapp-gcc/*
+
+# ctags files
+tags
+.tags
+.tags*
+
+# Object files
+*.o.cmd
+*.o.d
+*.map
+*.o
+*.ko
+*.obj
+*.elf
+_install
+_postbuild
+_postinstall
+_preinstall
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
