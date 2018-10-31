@@ -32,6 +32,7 @@ This guide helps you build and install Snort.
 1. Navigate to openNetVM source directory.
     ```sh
     cd openNetVM/
+    export ONVM_HOME=$(pwd)
     ```
     
 2. Compile onvm.
@@ -44,7 +45,7 @@ This guide helps you build and install Snort.
 
 1. Install dependencies.
     ```sh
-    sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev
+    sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev autoconf
     ```
 
 2. Navigate to the DAQ source directory.
@@ -91,16 +92,18 @@ This guide helps you build and install Snort.
     ```sh
     ./configure --enable-sourcefire
     ```
-    
-3. Navigate to the src folder.
+
+3. Create Patch of Makefille      
+   ```sh
+   cd ../
+   ./patching-Makefile.sh
+   ```
+
+4. Navigate to the src folder of snort and Make snort.
     ```sh
-    cd src
-    ```
-      
-4. Make snort.
-    ```sh
+    cd snort-2.9.8.3/src
     make clean
-    cp Makefile.dpdk Makefile
+    cp ../../Makefile.patched Makefile
     make -j7
     sudo make install
     ```
