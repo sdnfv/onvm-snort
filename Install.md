@@ -93,7 +93,8 @@ This guide helps you build and install Snort.
     ./configure --enable-sourcefire
     ```
 
-3. Create Patch of Makefille      
+3. Create Patch of Makefille 
+    This part is critical for the next steps. The defaults are blank. Please type in the answers manually.
    ```sh
    cd ../
    ./patching-Makefile.sh
@@ -121,19 +122,36 @@ This guide helps you build and install Snort.
     sudo cp -r snort-2.9.8.3/simple-etc /etc/snort
     sudo mkdir /usr/local/lib/snort_dynamicrules
     ```
+2. Add snort to path (change /opt/snort if the install path is different)
+    ```
+    export PATH=$PATH:/opt/snort/bin"
+    ```
+3. Set up huge pages
+    ```export ONVM_NUM_HUGEPAGES=1024
+    hp_size=$(cat /proc/meminfo | grep Hugepagesize | awk '{print $2}')
+    hp_count="${ONVM_NUM_HUGEPAGES:-1024}"
+    sudo mkdir -p /mnt/huge
+    sudo sh -c "echo \"huge /mnt/huge hugetlbfs defaults 0 0\" >> /etc/fstab"
+    sudo mount -t hugetlbfs nodev /mnt/huge
+    ```
     
-2. Run openNetVM manager. To install openNetVM, refer to this [guide][onvm-install].
+4. Run openNetVM manager. To install openNetVM, refer to this [guide][onvm-install].
     ```sh
     cd openNetVM-dev/onvm
     ./go.sh 0,1,2,3,4 3 -v 0x7f000000000
     ```
-3. Run Snort.
+5. Run Snort.
     ```sh
     sudo snort -A console -Q -c /etc/snort/snort.conf -i dpdk0:dpdk1 -N --alert-before-pass --daq-var netvm_args="-l 5 -n 3 --proc-type=secondary -- -r 1 -- -d 4"
     ```
+    If the above does not work then try:
+    ```
+    which snort
+    sudo `which snort` -A console -Q -c /etc/snort/snort.conf -i dpdk0:dpdk1 -N --alert-before-pass --daq-var netvm_args="-l 5 -n 3 --proc-type=secondary -- -r 1 -- -d 4"
+    ```
     ![snort init][snort-init]
     
-3. Run Bridge.
+6. Run Bridge.
     ```sh
     cd openNetVM-dev/examples/bridge/
     ./go.sh 6 4
