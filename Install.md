@@ -93,8 +93,7 @@ This guide helps you build and install Snort.
     ./configure --enable-sourcefire
     ```
 
-3. Create Patch of Makefille 
-    This part is critical for the next steps. The defaults are blank. Please type in the answers manually.
+3. Create Patch of Makefille. This part is critical for the next steps. The defaults are blank. Please type in the answers manually.
    ```sh
    cd ../
    ./patching-Makefile.sh
