@@ -133,6 +133,8 @@ This guide helps you build and install Snort.
     sudo sh -c "echo \"huge /mnt/huge hugetlbfs defaults 0 0\" >> /etc/fstab"
     sudo mount -t hugetlbfs nodev /mnt/huge
     ```
+    Further troubleshooting:
+    ```sudo sysctl vm.nr_hugepages=$hp_count```
     
 4. Run openNetVM manager. To install openNetVM, refer to this [guide][onvm-install].
     ```sh
