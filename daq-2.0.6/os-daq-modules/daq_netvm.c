@@ -49,6 +49,9 @@
 #include <onvm_pkt_helper.h>
 #include <onvm_nflib.h>
 
+/* timing header */
+#include <time.h>
+
 #define NF_TAG "snort"
 #define _NF_MEMPOOL_NAME "NF_INFO_MEMPOOL"
 
@@ -301,6 +304,8 @@ static int netvm_daq_acquire(void *handle, int cnt, DAQ_Analysis_Func_t callback
     uint16_t nb_pkts;
     uint16_t i, j;
     int tx_batch_size;
+    double cpu_time;
+    int pps; // packets per second
 
     //printf("->netvm_daq_acquire(%d - %d)\n", cnt, max_pkts);
     //if (once) {
@@ -318,6 +323,8 @@ static int netvm_daq_acquire(void *handle, int cnt, DAQ_Analysis_Func_t callback
             netvmc->break_loop = 0;
             return 0;
         }
+	    
+	start = clock(); /* timing function */
 
 	/* Dequeue all packets in ring up to max possible. */
 	nb_pkts = rte_ring_dequeue_burst(netvmc->rx_ring, pktsRX, max_pkts);
@@ -401,6 +408,11 @@ static int netvm_daq_acquire(void *handle, int cnt, DAQ_Analysis_Func_t callback
 	    /* Enqueue on return to NetVM */
 	    pktsTX[tx_batch_size++] = pktsRX[i];
 	}
+	 
+	/* timing function */
+        end = clock();
+        cpu_time = ((double) (end - start)) / CLOCKS_PER_SEC;
+        pps = (int) (nb_pkts / cpu_time);
 
 	/* Give returned burst of packets back to NetVM manager. */
 	if (unlikely(tx_batch_size > 0 && rte_ring_enqueue_bulk(netvmc->tx_ring, pktsTX, tx_batch_size) == -ENOBUFS)) {
