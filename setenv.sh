@@ -109,6 +109,14 @@ then
 	echo export ONVM_NUM_HUGEPAGES=1024 >> ~/.bashrc
 fi
 
+# don't add to fstan if already added
+grep "/mnt/fstab" /etc/fstab
+ANS=`echo $?`
+if [ $ANS == 0 ]
+then
+	export ONVM_SKIP_FSTAB=1
+fi
+
 echo using nics 06:00.0 and 06:00.1
 grep ONVM_NIC_PCI ~/.bashrc
 ANS=`echo $?`

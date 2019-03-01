@@ -52,10 +52,10 @@ BASE_DIR=$(pwd)
 # update
 sudo apt-get update
 
+cd $RTE_SDK
+make config T=x86_64-native-linuxapp-gcc O=x86_64-native-linuxapp-gcc
 make -j7 T=$RTE_TARGET O=$RTE_TARGET
 sudo make install T=x86_64-native-linuxapp-gcc
-
-cd onvm && make
 
 # Compile DAQ
 sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev autoconf
@@ -79,6 +79,7 @@ cd $BASE_DIR/snort*
 
 cd snort*/src
 make clean
+cp ../../Makefile.patched Makefile
 make -j7
 sudo make install
 
@@ -89,5 +90,6 @@ sudo mkdir /usr/local/lib/snort_dynamicrules
 
 cd $ONVM_HOME
 scripts/install.sh
+cd onvm && make
 
 cd $BASE_DIR
