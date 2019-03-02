@@ -110,7 +110,7 @@ then
 fi
 
 # don't add to fstan if already added
-grep "/mnt/fstab" /etc/fstab
+grep "/mnt/huge" /etc/fstab
 ANS=`echo $?`
 if [ $ANS == 0 ]
 then

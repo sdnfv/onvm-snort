@@ -45,6 +45,7 @@ then
 fi
 
 ./setenv.sh
+source ~/.bashrc
 
 # Base directory
 BASE_DIR=$(pwd)
