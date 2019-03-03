@@ -63,7 +63,7 @@ then
 	echo export DPDK_TARGET=x86_64-native-linuxapp-gcc >> ~/.bashrc
 fi
 
-cd $BASE_DIR/dpdk*/config
+cd $BASE_DIR/dpdk*
 grep RTE_SDK ~/.bashrc
 ANS=`echo $?`
 if [ $ANS == 1 ]
