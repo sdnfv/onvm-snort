@@ -413,6 +413,7 @@ static int netvm_daq_acquire(void *handle, int cnt, DAQ_Analysis_Func_t callback
 	
 	printf("CPU Time: %f\n", cpu_time);
 	printf("PPS: %f\n", pps);
+	printf("nb_pkts: %" PRIu16 "\n");
 
 	/* Give returned burst of packets back to NetVM manager. */
 	if (unlikely(tx_batch_size > 0 && rte_ring_enqueue_bulk(netvmc->tx_ring, pktsTX, tx_batch_size) == -ENOBUFS)) {
