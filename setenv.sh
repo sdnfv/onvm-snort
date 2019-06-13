@@ -36,55 +36,97 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-_PATCH_FILE_NAME=Makefile.patched
-_MAIN_FILE_TO_PATCH=Makefile.dpdk
-
-
-if [ ! -e $_MAIN_FILE_TO_PATCH ];then
-	echo "File '$_MAIN_FILE_TO_PATCH' not exits in current directory"
-	exit 10
-fi
-# Insert Directory of Cloned Repo
-read -p "onvm-snort cloned at [$(realpath `pwd`/..)] (example: /home/user): " _DIR || exit 10
-#if [ -z "_DIR" ]
-#then
-#	_DIR=$HOME
-#fi
-_DIR=${_DIR:-$(realpath `pwd`/..)}/onvm-snort/
-
-read -p "Snort will install to [/usr/local/] (example: /opt/snort): " _SNORT_INSTALL || exit 10
-#if [ -z "$_SNORT_INSTALL" ]
-#then
-#	_SNORT_INSTALL=/opt/snort
-#fi
-_SNORT_INSTALL=${_SNORT_INSTALL:-/usr/local/}
-
-read -p "DAQ Install PATH [Using System as Default] (example: /opt/daq): " _DAQ_INSTALL || exit 10
-#if [ -z "$_DAQ_INSTALL" ]
-#then
-#	_DAQ_INSTALL=/opt/daq
-#fi
-_DAQ_INSTALL=${_DAQ_INSTALL:- }
-
-# Create patched file
-cat $_MAIN_FILE_TO_PATCH | sed "s|/users/graceliu/snort/|$_DIR|g" | tee $_PATCH_FILE_NAME 1>/dev/null 2>&1 || exit 10
-
-# Replace new DIR
-sed -i "s|/users/graceliu/|$_DIR|g" $_PATCH_FILE_NAME || exit 10
-
-# Replace Prefix of Snort
-sed -i "s|prefix = /usr/local|prefix = $_SNORT_INSTALL|g" $_PATCH_FILE_NAME || exit 10
-
-if [ "$_DAQ_INSTALL" != " " ]; then
-	# Replace Libraries Path of DAQ
-	sed -i "s|-L/usr/local/lib|-L${_DAQ_INSTALL}/lib|g" $_PATCH_FILE_NAME || exit 10
-
-	# Replace CPPFLAGS
-	sed -i "s|CPPFLAGS = |CPPFLAGS = -I${_DAQ_INSTALL}/include |g" $_PATCH_FILE_NAME || exit 10
-
-	# Replace LDFLAGS
-	sed -i "s|LDFLAGS =  -lpcre -L/usr/lib -ldumbnet|LDFLAGS = -L${_DAQ_INSTALL}/lib -lpcre -ldumbnet|g" $_PATCH_FILE_NAME || exit 10
+ls | grep setenv.sh
+ANS=`echo $?`
+if [ $ANS == 1 ]
+then
+	echo please run this script in situ
+	exit
 fi
 
-echo "Patched file saved to '$_PATCH_FILE_NAME'"
+sudo apt-get install realpath
 
+# Base directory
+BASE_DIR=$(pwd)
+
+grep RTE_TARGET ~/.bashrc
+ANS=`echo $?`
+if [ $ANS == 1 ]
+then
+	echo export RTE_TARGET=x86_64-native-linuxapp-gcc >> ~/.bashrc
+fi
+
+grep DPDK_TARGET ~/.bashrc
+ANS=`echo $?`
+if [ $ANS == 1 ]
+then
+	echo export DPDK_TARGET=x86_64-native-linuxapp-gcc >> ~/.bashrc
+fi
+
+cd $BASE_DIR/dpdk*
+grep RTE_SDK ~/.bashrc
+ANS=`echo $?`
+if [ $ANS == 1 ]
+then
+	echo export RTE_SDK=$(pwd) >> ~/.bashrc
+fi
+
+cd $BASE_DIR/openNetVM*
+grep ONVM_HOME ~/.bashrc
+ANS=`echo $?`
+if [ $ANS == 1 ]
+then
+	echo export ONVM_HOME=$(pwd) >> ~/.bashrc
+fi
+
+cd $BASE_DIR
+ls | grep Makefile.patched
+ANS=`echo $?`
+if [ $ANS == 0 ]
+then
+	read -p "Do you want to create the snort Makefile again? (y/N): " ANS
+else
+	ANS='y'
+fi
+
+if [ "$ANS" == "y" ]
+then
+	./patching-Makefile.sh
+	cp ./Makefile.patched $BASE_DIR/snort*/src/
+fi
+
+grep "/opt/snort" ~/.bashrc
+ANS=`echo $?`
+if [ $ANS == 0 ]
+then
+	echo export PATH=$PATH:/opt/snort/bin >> ~/.bashrc
+fi
+
+grep ONVM_NUM_HUGEPAGES ~/.bashrc
+ANS=`echo $?`
+if [ $ANS == 1 ]
+then
+	echo export ONVM_NUM_HUGEPAGES=1024 >> ~/.bashrc
+fi
+
+# don't add to fstan if already added
+grep "/mnt/huge" /etc/fstab
+ANS=`echo $?`
+if [ $ANS == 0 ]
+then
+	export ONVM_SKIP_FSTAB=1
+fi
+
+echo using nics 06:00.0 and 06:00.1
+grep ONVM_NIC_PCI ~/.bashrc
+ANS=`echo $?`
+if [ $ANS == 1 ]
+then
+	echo 'export ONVM_NIC_PCI=" 06:00.0 06:00.1 "' >> ~/.bashrc
+fi
+
+source ~/.bashrc
+
+sudo sh -c "echo 0 > /proc/sys/kernel/randomize_va_space"
+
+cd $BASE_DIR
