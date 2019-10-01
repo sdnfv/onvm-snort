@@ -43,21 +43,24 @@
 #include <rte_mbuf.h>
 #include <rte_ip.h>
 #include <rte_cycles.h>
+#include <rte_malloc.h>
+#include <rte_mempool.h>
+#include <rte_ring.h>
+#include <rte_atomic.h>
+#include <rte_ether.h>
 
 //----- NetVM header files and tags ----
-#include <onvm_common.h>
-#include <onvm_sc_common.h>
+#include <onvm_flow_table.h>
 #include <onvm_pkt_helper.h>
 #include <onvm_nflib.h>
 
-#define NF_TAG "scalingvm"
-
-#define _NF_MEMPOOL_NAME "NF_INFO_MEMPOOL"
+#define NF_TAG "snort"
 
 #define DAQ_NETVM_VERSION 1
+#define PKTMBUF_POOL_NAME "MProc_pktmbuf_pool"
 
 #define MAX_ARGS 64
-#define PKT_READ_SIZE  ((uint16_t)32) 
+#define PKT_READ_SIZE ((uint16_t)32) 
 
 /* Context for the DAQ.
  * We need only a single context, because we have only a single connection
@@ -72,9 +75,12 @@ typedef struct _netvm_context
     int promisc_flag;
     DAQ_Stats_t stats;
     struct sfbpf_program fcode;
+    /* info isn't needed as nf_local_ctx already contains nf
     struct onvm_nf* info;
+    */
     struct rte_ring *tx_ring;
     struct rte_ring *rx_ring;
+    /* structure to store the NF context */
     struct onvm_nf_local_ctx *nf_local_ctx;
     /* structure has been included in onvm_nf
     volatile struct client_tx_stats *tx_stats;
@@ -82,10 +88,12 @@ typedef struct _netvm_context
     char errbuf[256];
 } NetVM_Context_t;
 
-/* struct for the netvm */
-/* stuct nf_info no longer exists */
-struct onvm_nf *nf;
-struct rte_mbuf* pkt1;
+/* struct for the netvm 
+ * stuct nf_info no longer exists 
+ * is this even needed?
+ * struct onvm_nf *nf;
+ * struct rte_mbuf* pkt1;
+ */
 //static int once = 1;
 
 /* Service ID of next NF */
@@ -94,7 +102,7 @@ static uint32_t destination;
 static void netvm_daq_reset_stats(void *handle);
 /* need a signal handler for cleanup */
 void sig_handler(int sig);
-rte_atomic16_t signal_exit_flag;
+static uint32_t break_loop = 0;
 
 /*
  * Print a usage message
@@ -157,11 +165,9 @@ static int parse_args(char *inputstring, char **argv)
 
 /* need a sig handler for cleanup */
 void sig_handler(int sig) {
-        if (sig != SIGINT && sig != SIGTERM)
-                return;
-
-        /* Will stop the processing for all spawned threads in advanced rings mode */
-        rte_atomic16_set(&signal_exit_flag, 1);
+    if (sig == SIGINT || sig == SIGTERM) {
+        break_loop = 1;
+    }
 }
 
 /* Initialise the DAQ module and the DAQ context. */
@@ -169,7 +175,7 @@ static int netvm_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, cha
 {
     NetVM_Context_t *netvmc = NULL;
     DAQ_Dict *entry;
-    int ret, rval = DAQ_ERROR;
+    int arg_offset, rval = DAQ_ERROR;
     char *netvm_args = NULL;
     char argv0[] = "fake";
     char *argv[MAX_ARGS + 1];
@@ -177,19 +183,16 @@ static int netvm_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, cha
 
     /* these are needed for new standards */
     struct onvm_nf_local_ctx *nf_local_ctx;
-    struct onvm_nf_function_table *nf_function_table;
 
-    //printf("->netvm_daq_initialize()\n");
     
     /* Sanity check ! */
-    /* Removed cause no longer in use
+    /* Removed cause no longer in use 
     if (rte_mempool_ops_table.num_ops == 0) {
         snprintf(errbuf, errlen, "%s: DPDK constructors not linked in, please link whole DPDK archive!", __FUNCTION__);
         rval = DAQ_ERROR_INVAL;
         goto err;
     }
     */
-
     /* Import the DPDK/Netvm arguments */
     for (entry = config->values; entry; entry = entry->next) {
         if (!strcmp(entry->key, "netvm_args"))
@@ -210,13 +213,10 @@ static int netvm_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, cha
     printf("netvm going to init\n");
     /* need this code to keep in line with newer standards */
     nf_local_ctx = onvm_nflib_init_nf_local_ctx();
-    /* advanced rings */
-    rte_atomic16_init(&signal_exit_flag);
-    rte_atomic16_set(&signal_exit_flag, 0);
     onvm_nflib_start_signal_handler(nf_local_ctx, sig_handler);
     /*function table not needed */
-    nf_function_table = NULL;
 
+    /*
     ret = onvm_nflib_init(argc, argv, NF_TAG, nf_local_ctx, nf_function_table);
     if (ret < 0)
     {
@@ -224,15 +224,31 @@ static int netvm_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, cha
         rval = DAQ_ERROR_INVAL;
         return rval;
     }
+    */
+    if ((arg_offset = onvm_nflib_init(argc, argv, NF_TAG, nf_local_ctx, NULL)) < 0) {
+        /* error handling */
+        onvm_nflib_stop(nf_local_ctx);
+        if (arg_offset == ONVM_SIGNAL_TERMINATION) {
+            printf("Exiting due to user termination\n");
+            rval = DAQ_ERROR_INVAL;
+            return rval;
+        } else {
+            rte_exit(EXIT_FAILURE, "Failed ONVM init\n");
+        }
+    }
     /* At this point, we are *not* running. */
     //nf->status = NF_STOPPED;
     printf("netvm init done\n");
-    nf = nf_local_ctx->nf;
-    /* Complete onvm handshake */
-    onvm_nflib_nf_ready(nf);
+    /* not necessary honestly
+     * nf = nf_local_ctx->nf;
+     */
+    /* Complete onvm handshake 
+     * update to replace unnecessary pointer 
+     */
+    onvm_nflib_nf_ready(nf_local_ctx->nf);
 
     /* Parse app args */
-    if (parse_app_args(argc - ret, argv + ret, "daq_netvm") < 0) {
+    if (parse_app_args(argc - arg_offset, argv + arg_offset, "daq_netvm") < 0) {
         snprintf(errbuf, errlen, "%s: Can't parse DAQ_NetVM arguments!", __FUNCTION__);
         rval = DAQ_ERROR_INVAL;
         goto shutdown;
@@ -255,10 +271,12 @@ static int netvm_daq_initialize(const DAQ_Config_t *config, void **ctxt_ptr, cha
      * netvmc->rx_ring = onvm_nflib_get_rx_ring(nf);
      * netvmc->tx_stats = onvm_nflib_get_tx_stats(nf);
      */
-    netvmc->tx_ring = nf->tx_q;
-    netvmc->rx_ring = nf->rx_q;
+    netvmc->tx_ring = nf_local_ctx->nf->tx_q;
+    netvmc->rx_ring = nf_local_ctx->nf->rx_q;
     netvmc->nf_local_ctx = nf_local_ctx;
-    netvmc->info = nf;
+    /* line to longer required
+     * netvmc->nf = info;
+     */
      
     //printf("netvm timeout = %d\n", netvmc->timeout);
 
@@ -276,7 +294,7 @@ err:
     }
     return rval;
 }
-  
+
 static int netvm_daq_set_filter(void *handle, const char *filter)
 {
     NetVM_Context_t *netvmc = (NetVM_Context_t *) handle;
@@ -332,7 +350,10 @@ static const DAQ_Verdict verdict_translation_table[MAX_DAQ_VERDICT] = {
 static int netvm_daq_acquire(void *handle, int cnt, DAQ_Analysis_Func_t callback, DAQ_Meta_Func_t metaback, void *user)
 {
     NetVM_Context_t *netvmc = (NetVM_Context_t *) handle;
-    struct onvm_nf* info = netvmc->info;
+    /* change to the nf contained inside nf_local_ctx 
+     * update the name 
+     */
+    struct onvm_nf* nf = netvmc->nf_local_ctx->nf;
     int max_pkts = RTE_MIN(cnt > 0 ? cnt : PKT_READ_SIZE, PKT_READ_SIZE);
     void *pktsRX[PKT_READ_SIZE];
     void *pktsTX[PKT_READ_SIZE];
@@ -361,7 +382,11 @@ static int netvm_daq_acquire(void *handle, int cnt, DAQ_Analysis_Func_t callback
             netvmc->break_loop = 0;
             return 0;
         }
-	    
+        if(break_loop) {
+            /* error handling needed for handling SIGINT */
+            break_loop = 0;
+            return DAQ_ERROR;
+        }
 	start = rte_get_tsc_cycles();
 	
 	/* Dequeue all packets in ring up to max possible. */
@@ -457,12 +482,14 @@ static int netvm_daq_acquire(void *handle, int cnt, DAQ_Analysis_Func_t callback
 	/* Give returned burst of packets back to NetVM manager. */
     /* Function needs to be updates for DPDK */
 	if (unlikely(tx_batch_size > 0 && rte_ring_enqueue_bulk(netvmc->tx_ring, pktsTX, tx_batch_size, NULL) == 0)) {
-	    netvmc->info->stats.tx_drop += tx_batch_size;
+            /* update to the new pointer, update name */
+	    nf->stats.tx_drop += tx_batch_size;
 	    for (j = 0; j < tx_batch_size; j++) {
 	        rte_pktmbuf_free(pktsTX[j]);
 	    }
 	} else {
-	    netvmc->info->stats.tx += tx_batch_size;
+            /* update to the new pointer, update name */
+	    nf->stats.tx += tx_batch_size;
 	}
     }
     //printf("<-netvm_daq_acquire() - count\n");
@@ -494,7 +521,9 @@ static int netvm_daq_stop(void *handle)
     NetVM_Context_t *netvmc = (NetVM_Context_t *) handle;
     //printf("->netvm_daq_stop()\n");
 
-    netvmc->nf_local_ctx->nf->status = NF_STOPPED;
+    /* not required as this confuses the onvm_mgr
+     * netvmc->nf_local_ctx->nf->status = NF_STOPPED;
+     */
     netvmc->state = DAQ_STATE_STOPPED;
 
     return DAQ_SUCCESS;
