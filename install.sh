@@ -14,32 +14,39 @@ BASE_DIR=$(pwd)
 # update
 sudo apt-get update
 
-make -j7 T=$RTE_TARGET O=$RTE_TARGET
-sudo make install T=x86_64-native-linuxapp-gcc
+#compile onvm
+cd $ONVM_HOME/scripts
+./install.sh
 
-cd onvm && make
+cd $ONVM_HOME/onvm && make
 
 # Compile DAQ
 sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev autoconf
 
 cd $BASE_DIR/daq*
 
-make clean
 aclocal
 autoconf
 autoheader
 automake -a
+autoreconf -fvi
 
-./configure --with-dpdk-includes=$RTE_SDK/$RTE_TARGET/include --with-dpdk-libraries=$RTE_SDK/$RTE_TARGET/lib --with-netvm-includes=$ONVM_HOME/onvm --with-netvm-libraries=$ONVM_HOME/onvm
+./configure --enable-static --disable-shared --with-dpdk-includes=$RTE_SDK/$RTE_TARGET/include --with-dpdk-libraries=$RTE_SDK/$RTE_TARGET/lib --with-netvm-includes=$ONVM_HOME/onvm --with-netvm-libraries=$ONVM_HOME/onvm
 
+
+make clean
 make -j7
 sudo make install
 
 # Compile snort
-cd $BASE_DIR/snort*
-./configure --enable-sourcefire
+cd $BASE_DIR/snort-2.9*
+aclocal
+autoconf
+autoheader
+automake -a
+autoreconf -fvi
+./configure --enable-static --disable-shared --with-dpdk-includes=$RTE_SDK/$RTE_TARGET/include --with-dpdk-libraries=$RTE_SDK/$RTE_TARGET/lib --with-netvm-includes=$ONVM_HOME/onvm --with-netvm-libraries=$ONVM_HOME/onvm
 
-cd snort*/src
 make clean
 make -j7
 sudo make install
@@ -48,8 +55,5 @@ sudo ldconfig
 
 sudo cp -r snort*/simple-etc /etc/snort
 sudo mkdir /usr/local/lib/snort_dynamicrules
-
-cd $ONVM_HOME
-scripts/install.sh
 
 cd $BASE_DIR
