@@ -1,0 +1,3 @@
+[submodule "openNetVM"]
+	path = openNetVM
+	url = https://github.com/sdnfv/openNetVM
