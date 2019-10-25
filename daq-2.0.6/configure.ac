@@ -132,8 +132,8 @@ AC_ARG_WITH(netvm_libraries,
             [with_netvm_libraries="$withval"], [with_netvm_libraries="no"])
 
 if test "x$with_netvm_libraries" != "xno"; then
-    NETVM_LDFLAGS="-L${with_netvm_libraries}/onvm_nflib/${DPDK_TARGET}/"
-    NETVM_HELPER_LDFLAGS="-L${with_netvm_libraries}/lib/${DPDK_TARGET}/"
+    NETVM_LDFLAGS="-L${with_netvm_libraries}/onvm_nflib/${RTE_TARGET}/"
+    NETVM_HELPER_LDFLAGS="-L${with_netvm_libraries}/lib/${RTE_TARGET}/"
 fi
 
 DEFAULT_ENABLE=yes
