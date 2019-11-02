@@ -3,79 +3,54 @@
 This guide helps you build and install Snort.
 
 ---
-1. Compile DPDK
+1. Setup Repositories
 ---
 
-1. Export correct target variable for your system as required by DPDK.
-
+1. Download source code
     ```sh
-    export RTE_TARGET=x86_64-native-linuxapp-gcc
-    export DPDK_TARGET=x86_64-native-linuxapp-gcc
+    git clone https://github.com/sdnfv/onvm-snort
+    cd onvm-snort
     ```
-
-2.  Navigate to your DPDK source repository and set environment variable RTE_SDK to the path of the DPDK library. 
+2. Initialize openNetVM submodule
     ```sh
-    cd dpdk-stable-16.11.1
-    export RTE_SDK=$(pwd)
+    git submodule sync
+    git submodule update --init
     ```
-
-3. Build DPDK.
-    ```sh
-    make config T=x86_64-native-linuxapp-gcc O=x86_64-native-linuxapp-gcc
-    make -j7 T=$RTE_TARGET O=$RTE_TARGET
-    sudo make install T=x86_64-native-linuxapp-gcc
-    ```  
 ---
-2. Compile ONVM
+2. Compile DPDK and openNetVM
 ---
 
-1. Navigate to openNetVM source directory.
-    ```sh
-    cd openNetVM/
-    export ONVM_HOME=$(pwd)
-    ```
-    
-2. Compile onvm.
-    ```sh
-    cd onvm && make
-    ```
+Please follow [the openNetVM installation guide](https://github.com/sdnfv/openNetVM/blob/master/docs/Install.md).
+
 ---
 3. Compile DAQ
 ---
 
 1. Install dependencies.
     ```sh
-    sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev autoconf
+    sudo apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev zlib1g-dev liblzma-dev libssl-dev autoconf flex bison luajit libtool libglib2.0-dev pkg-config
     ```
-
 2. Navigate to the DAQ source directory.
     ```sh
     cd daq-2.0.6/
     ```
-
-2. Clean the build. 
-    ```sh
-    make clean
-    ```
-    
-3. Prepare for automake, then autocreate makefile. 
+3. Prepare for automake, then autocreate makefile.
     ```sh
     aclocal
     autoconf
     autoheader
+    autoreconf -ivf
     automake -a
     ```
-  
 4. Run the configuration script and include the dpdk and netvm libraries.
     ```sh
-    ./configure --with-dpdk-includes=$RTE_SDK/$RTE_TARGET/include --with-dpdk-libraries=$RTE_SDK/$RTE_TARGET/lib --with-netvm-includes=$ONVM_HOME/onvm --with-netvm-libraries=$ONVM_HOME/onvm
+    ./configure --enable-static --disable-shared --with-dpdk-includes=$RTE_SDK/$RTE_TARGET/include --with-dpdk-libraries=$RTE_SDK/$RTE_TARGET/lib --with-netvm-includes=$ONVM_HOME/onvm --with-netvm-libraries=$ONVM_HOME/onvm
     ```
     User should see yes for both DPDK and NetVM DAQs
     ![onvm daq][onvm-daq]
-    
-    
 5. Build the DAQ 
     ```sh
+    make clean
     make -j7
     sudo make install
     ```  
@@ -87,28 +62,26 @@ This guide helps you build and install Snort.
     ```sh
     cd snort-2.9.8.3/
     ```
-    
-2. Run the configuration script.
+2. Prepare for automake, then autocreate makefile. 
     ```sh
-    ./configure --enable-sourcefire
+    aclocal
+    autoconf
+    autoheader
+    autoreconf -ivf
+    automake -a
     ```
-
-3. Create Patch of Makefille. This part is critical for the next steps. The defaults are blank. Please type in the answers manually.
-   ```sh
-   cd ../
-   ./patching-Makefile.sh
-   ```
-
+3. Run the configuration script.
+    ```sh
+    ./configure --enable-sourcefire --enable-static --disable-shared
+    ```
 4. Navigate to the src folder of snort and Make snort.
     ```sh
     cd snort-2.9.8.3/src
     make clean
-    cp ../../Makefile.patched Makefile
     make -j7
     sudo make install
     ```
-    
-5. Configure linker. 
+5. Configure linker.
     ```sh
     sudo ldconfig
     ```
@@ -123,27 +96,16 @@ This guide helps you build and install Snort.
     ```
 2. Add snort to path (change /opt/snort if the install path is different)
     ```
-    export PATH=$PATH:/opt/snort/bin"
+    export PATH=$PATH:/opt/snort/bin
     ```
-3. Set up huge pages
-    ```export ONVM_NUM_HUGEPAGES=1024
-    hp_size=$(cat /proc/meminfo | grep Hugepagesize | awk '{print $2}')
-    hp_count="${ONVM_NUM_HUGEPAGES:-1024}"
-    sudo mkdir -p /mnt/huge
-    sudo sh -c "echo \"huge /mnt/huge hugetlbfs defaults 0 0\" >> /etc/fstab"
-    sudo mount -t hugetlbfs nodev /mnt/huge
-    ```
-    Further troubleshooting:
-    ```sudo sysctl vm.nr_hugepages=$hp_count```
-    
-4. Run openNetVM manager. To install openNetVM, refer to this [guide][onvm-install].
+3. Run openNetVM manager. To install openNetVM, refer to this [guide][onvm-install].
     ```sh
-    cd openNetVM-dev/onvm
-    ./go.sh 0,1,2,3,4 3 -v 0x7f000000000
+    cd openNetVM/onvm
+    ./go.sh 0,1,2,3 3 0xF0 -a 0x7f000000000 -s stdout
     ```
-5. Run Snort.
+4. Run Snort.
     ```sh
-    sudo snort -A console -Q -c /etc/snort/snort.conf -i dpdk0:dpdk1 -N --alert-before-pass --daq-var netvm_args="-l 5 -n 3 --proc-type=secondary -- -r 1 -- -d 4"
+    sudo snort -A console -Q -c /etc/snort/snort.conf -i dpdk0 -N --alert-before-pass --daq-var netvm_args="-l 5 -n 3 --proc-type=secondary -- -r 1 -- -d 4"
     ```
     If the above does not work then try:
     ```
@@ -161,3 +123,4 @@ This guide helps you build and install Snort.
 [onvm-install]: https://github.com/sdnfv/openNetVM/blob/master/docs/Install.md
 [onvm-daq]: https://github.com/sdnfv/onvm-snort/blob/master/onvm-daq.png "onvm daq"
 [snort-init]: https://github.com/sdnfv/onvm-snort/blob/master/snort-initialization.png "snort initialization"
+
