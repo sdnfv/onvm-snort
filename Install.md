@@ -36,10 +36,10 @@ Please follow [the openNetVM installation guide](https://github.com/sdnfv/openNe
     ```
 3. Prepare for automake, then autocreate makefile.
     ```sh
+    autoreconf -ivf
     aclocal
     autoconf
     autoheader
-    autoreconf -ivf
     automake -a
     ```
 4. Run the configuration script and include the dpdk and netvm libraries.
@@ -64,10 +64,10 @@ Please follow [the openNetVM installation guide](https://github.com/sdnfv/openNe
     ```
 2. Prepare for automake, then autocreate makefile. 
     ```sh
+    autoreconf -ivf
     aclocal
     autoconf
     autoheader
-    autoreconf -ivf
     automake -a
     ```
 3. Run the configuration script.

@@ -21,6 +21,7 @@ Contributors
 - Jean Tourrilhes -- Hewlett Packard Labs
 - Grace Liu -- GWU (Contact: guyue at gwu.edu)
 - Riley Kennedy -- GWU
+- Archit Pandey -- WiNG, NITK
 
 [snort-link]: https://www.snort.org/
 [onvm]: http://sdnfv.github.io/onvm/
